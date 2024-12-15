@@ -41,7 +41,7 @@ const generateOAuthHeaders = (url, method) => {
  
   const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
 
-  // Add signature and realm to parameters
+  
   params.oauth_signature = signature;
 
   const authHeader = `OAuth realm="${config.ACCOUNT_ID.toUpperCase()}", ` + Object.keys(params)
@@ -56,7 +56,7 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
-// GET /Users Endpoint: Return mock SCIM response
+
 app.get(['/Users', '/Users/Users'], (req, res) => {
   console.log('Incoming GET request to /Users');
   res.status(200).send({
@@ -66,14 +66,14 @@ app.get(['/Users', '/Users/Users'], (req, res) => {
   });
 });
 
-// POST /Users Endpoint: Provision user to NetSuite
+
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-  // Enhanced mapping from Azure SCIM to NetSuite Employee fields
+ 
   const displayNameParts = user.displayName?.trim().split(/\s+/) || [];
   const firstName = displayNameParts[0] || 'FirstName';
   const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
@@ -90,10 +90,10 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   const netsuiteUrl = `https://${config.ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
 
   try {
-    // Generate OAuth Headers
+    
     const headers = generateOAuthHeaders(netsuiteUrl, 'POST');
 
-    // Make API Request to NetSuite
+   
     const response = await axios.post(netsuiteUrl, employeePayload, { headers });
 
     console.log('User provisioned successfully:', response.data);
@@ -110,5 +110,5 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   }
 });
 
-// Start the Middleware Server
+
 app.listen(3000, () => console.log('Middleware running on port 3000'));
