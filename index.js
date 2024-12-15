@@ -6,7 +6,6 @@ const app = express();
 app.use(express.json({ type: ['application/json', 'application/scim+json'] }));
 
 
-// NetSuite Configuration
 const config = {
   ACCOUNT_ID: 'td2953323',
   CONSUMER_KEY: '',
@@ -30,7 +29,7 @@ const generateOAuthHeaders = (url, method) => {
     oauth_version: '1.0',
   };
 
-  // Construct base string
+  
   const paramString = Object.keys(params)
     .sort()
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
@@ -39,7 +38,7 @@ const generateOAuthHeaders = (url, method) => {
   const baseString = `${method.toUpperCase()}&${encodeURIComponent(url)}&${encodeURIComponent(paramString)}`;
   const signingKey = `${config.CONSUMER_SECRET}&${config.TOKEN_SECRET}`;
 
-  // Generate signature
+ 
   const signature = crypto.createHmac('sha256', signingKey).update(baseString).digest('base64');
 
   // Add signature and realm to parameters
