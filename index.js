@@ -47,7 +47,7 @@ const generateOAuthHeaders = (url, method) => {
   const authHeader = `OAuth realm="${config.ACCOUNT_ID.toUpperCase()}", ` + Object.keys(params)
     .map(key => `${encodeURIComponent(key)}="${encodeURIComponent(params[key])}"`)
     .join(', ');
-//authheader
+    
   return {
     Authorization: authHeader,
     'Content-Type': 'application/json',
