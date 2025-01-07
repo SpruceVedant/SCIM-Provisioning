@@ -14,7 +14,7 @@ const config = {
   DEFAULT_PASSWORD: 'SecurePassword123',
 };
 
-
+// Maps for subsidiary and roles
 const departmentSubsidiaryMap = {
   "Havas Creative Network": "1",
   "Havas India": "2",
@@ -29,7 +29,7 @@ const employeeTypeRoleMap = {
   "SSO Role": ["1137"],
 };
 
-
+// Generate OAuth 1.0 Signature
 const generateOAuthHeaders = (url, method) => {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = crypto.randomBytes(16).toString('hex');
@@ -69,48 +69,40 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
-app.get(['/Users', '/Users/Users'], (req, res) => {
-  console.log('Incoming GET request to /Users');
-  res.status(200).send({
-    schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-    totalResults: 0,
-    Resources: []
-  });
-});
-
+// Endpoint to provision users
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-  
+  // Extract user details
   const displayNameParts = user.displayName?.trim().split(/\s+/) || [];
   const firstName = displayNameParts[0] || 'FirstName';
   const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
 
-
-  const department = user.department || "Havas Creative Network"; 
+  // Map department to subsidiary
+  const department = user.department || "Havas Creative Network"; // Default department
   const subsidiaryId = departmentSubsidiaryMap[department];
   if (!subsidiaryId) {
     console.error(`Invalid department: ${department}`);
     return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
   }
 
-
-  const employeeType = user.employeeType || "Employee Center";
+  // Map employee type to roles
+  const employeeType = user.employeeType || "Employee Center"; // Default employee type
   const roles = employeeTypeRoleMap[employeeType];
   if (!roles || roles.length === 0) {
     console.error(`Invalid employee type: ${employeeType}`);
     return res.status(400).send({ error: `Employee type '${employeeType}' is not mapped to roles.` });
   }
 
- 
+  // Prepare role payload
   const rolesPayload = roles.map((roleId) => ({
-    selectedrole: roleId,
+    selectedrole: roleId.toString(), // Ensure role ID is a string
   }));
 
- 
+  // Construct the employee payload
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
@@ -123,7 +115,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     roles: { items: rolesPayload },
   };
 
-  console.log('Mapped Payload to NetSuite:', employeePayload);
+  console.log('Mapped Payload to NetSuite:', JSON.stringify(employeePayload, null, 2));
 
   const netsuiteUrl = `https://${config.ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
 
