@@ -105,14 +105,14 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     firstname: firstName,
     lastname: lastName,
     email: user.userName || 'default@example.com',
-    subsidiary: { id: subsidiaryId }, // Pass the internal ID of the subsidiary
+    subsidiary: { id: subsidiaryId }, 
     department,
-    employeetype: employeeType, // Pass the employee type
+    employeetype: employeeType, 
     giveaccess: true,
     password: config.DEFAULT_PASSWORD,
     password2: config.DEFAULT_PASSWORD,
     isinactive: false,
-    roles: { items: rolesPayload }, // Pass roles with internal IDs
+    roles: { items: rolesPayload }, 
   };
 
   console.log('Mapped Payload to NetSuite:', employeePayload);
