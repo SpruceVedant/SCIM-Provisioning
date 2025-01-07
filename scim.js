@@ -14,7 +14,7 @@ const config = {
   DEFAULT_PASSWORD: 'SecurePassword123',
 };
 
-// Maps for subsidiary and roles
+
 const departmentSubsidiaryMap = {
   "Havas Creative Network": "1",
   "Havas India": "2",
@@ -69,19 +69,19 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
-// Endpoint to provision users
+
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-  // Extract user details
+ 
   const displayNameParts = user.displayName?.trim().split(/\s+/) || [];
   const firstName = displayNameParts[0] || 'FirstName';
   const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
 
-  // Map department to subsidiary
+
   const department = user.department?.trim();
   const subsidiaryId = departmentSubsidiaryMap[department];
 
@@ -90,8 +90,8 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     return res.status(400).send({ error: `Department '${department}' is not mapped to any subsidiary.` });
   }
 
-  // Map employee type to roles
-  const employeeType = user.employeeType?.trim() || "Employee Center"; // Default employee type
+
+  const employeeType = user.employeeType?.trim() || "Employee Center"; 
   const roles = employeeTypeRoleMap[employeeType];
 
   if (!roles || roles.length === 0) {
@@ -99,12 +99,12 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     return res.status(400).send({ error: `Employee type '${employeeType}' is not mapped to any roles.` });
   }
 
-  // Prepare role payload
+
   const rolesPayload = roles.map((roleId) => ({
     selectedrole: roleId.toString(),
   }));
 
-  // Construct the employee payload
+
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
