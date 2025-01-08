@@ -1,5 +1,3 @@
-
-//Working right now except (subsidiary)
 const express = require('express');
 const crypto = require('crypto');
 const axios = require('axios');
@@ -16,22 +14,21 @@ const config = {
   DEFAULT_PASSWORD: 'SecurePassword123',
 };
 
-
 const departmentSubsidiaryMap = {
-  "Havas Creative Network": "1",
-  "Havas India": "2",
-  "Havas Life": "3",
-  "Shobiz": "6",
+  "havas creative network": "1",
+  "havas india": "2",
+  "havas life": "3",
+  "shobiz": "6",
 };
 
 const employeeTypeRoleMap = {
-  "Admin": ["3"],         
-  "Employee Center": ["15"],
-  "CEO": ["8"],
-  "SSO Role": ["1137"],
+  "admin": ["3"],
+  "employee center": ["15"],
+  "ceo": ["8"],
+  "sso role": ["1137"],
 };
 
-// Generateing OAuth 1.0 Signature
+// Generate OAuth 1.0 Signature
 const generateOAuthHeaders = (url, method) => {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = crypto.randomBytes(16).toString('hex');
@@ -71,45 +68,36 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
-app.get(['/Users', '/Users/Users'], (req, res) => {
-  console.log('Incoming GET request to /Users');
-  res.status(200).send({
-    schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-    totalResults: 0,
-    Resources: []
-  });
-});
-
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-
   const displayNameParts = user.displayName?.trim().split(/\s+/) || [];
   const firstName = displayNameParts[0] || 'FirstName';
   const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
 
- 
-  const department = user.department || "Havas Creative Network"; 
+  // Normalize and map department to subsidiary
+  const department = user.department?.trim().toLowerCase();
   const subsidiaryId = departmentSubsidiaryMap[department];
+
   if (!subsidiaryId) {
-    console.error(`Invalid department: ${department}`);
+    console.error(`Invalid or missing department: '${department}'`);
     return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
   }
 
-  
-  const employeeType = user.employeeType || "Employee Center"; 
+  // Normalize and map employee type to roles
+  const employeeType = user.employeeType?.trim().toLowerCase() || "employee center";
   const roles = employeeTypeRoleMap[employeeType];
+
   if (!roles || roles.length === 0) {
-    console.error(`Invalid employee type: ${employeeType}`);
+    console.error(`Invalid or missing employee type: '${employeeType}'`);
     return res.status(400).send({ error: `Employee type '${employeeType}' is not mapped to roles.` });
   }
 
- 
   const rolesPayload = roles.map((roleId) => ({
-    selectedrole: roleId.toString(), 
+    selectedrole: roleId.toString(),
   }));
 
   // Construct the employee payload
@@ -127,7 +115,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 
   console.log('Mapped Payload to NetSuite:', JSON.stringify(employeePayload, null, 2));
 
-  const netsuiteUrl = `https://9370186-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
+  const netsuiteUrl = `https://${config.ACCOUNT_ID.toLowerCase()}.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
 
   try {
     const headers = generateOAuthHeaders(netsuiteUrl, 'POST');
