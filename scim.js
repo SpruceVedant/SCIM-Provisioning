@@ -74,12 +74,13 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-  const displayNameParts = user.displayName?.trim().split(/\s+/) || [];
-  const firstName = displayNameParts[0] || 'FirstName';
-  const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
+  // Extract name and email
+  const firstName = user.name?.givenName || 'FirstName';
+  const lastName = user.name?.familyName || 'LastName';
+  const email = user.userName || 'default@example.com';
 
-  // Normalize and map department to subsidiary
-  const department = user.department?.trim().toLowerCase();
+  // Extract and normalize department from nested key
+  const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim().toLowerCase();
   const subsidiaryId = departmentSubsidiaryMap[department];
 
   if (!subsidiaryId) {
@@ -87,7 +88,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
   }
 
-  // Normalize and map employee type to roles
+  // Extract and normalize employee type
   const employeeType = user.employeeType?.trim().toLowerCase() || "employee center";
   const roles = employeeTypeRoleMap[employeeType];
 
@@ -104,7 +105,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
-    email: user.userName || 'default@example.com',
+    email: email,
     subsidiary: { id: subsidiaryId },
     giveaccess: true,
     password: config.DEFAULT_PASSWORD,
@@ -136,42 +137,3 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 });
 
 app.listen(3000, () => console.log('Middleware running on port 3000'));
-
-
-
-Incoming GET request to /Users
-Raw Request Body: {
-  "schemas": [
-    "urn:ietf:params:scim:schemas:core:2.0:User",
-    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
-  ],
-  "externalId": "Scim.user",
-  "userName": "Scim.user@vedant2107bakshigmail.onmicrosoft.com",
-  "active": true,
-  "displayName": "Scim User",
-  "meta": {
-    "resourceType": "User"
-  },
-  "name": {
-    "formatted": "Scim User",
-    "familyName": "User",
-    "givenName": "Scim"
-  },
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
-    "department": "Shobiz"
-  }
-}
-Incoming Azure Provisioning Request: {
-  schemas: [
-    'urn:ietf:params:scim:schemas:core:2.0:User',
-    'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User'
-  ],
-  externalId: 'Scim.user',
-  userName: 'Scim.user@vedant2107bakshigmail.onmicrosoft.com',
-  active: true,
-  displayName: 'Scim User',
-  meta: { resourceType: 'User' },
-  name: { formatted: 'Scim User', familyName: 'User', givenName: 'Scim' },
-  'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': { department: 'Shobiz' }
-}
-Invalid or missing department: 'undefined'
