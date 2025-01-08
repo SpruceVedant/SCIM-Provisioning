@@ -136,3 +136,42 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 });
 
 app.listen(3000, () => console.log('Middleware running on port 3000'));
+
+
+
+Incoming GET request to /Users
+Raw Request Body: {
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "externalId": "Scim.user",
+  "userName": "Scim.user@vedant2107bakshigmail.onmicrosoft.com",
+  "active": true,
+  "displayName": "Scim User",
+  "meta": {
+    "resourceType": "User"
+  },
+  "name": {
+    "formatted": "Scim User",
+    "familyName": "User",
+    "givenName": "Scim"
+  },
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "department": "Shobiz"
+  }
+}
+Incoming Azure Provisioning Request: {
+  schemas: [
+    'urn:ietf:params:scim:schemas:core:2.0:User',
+    'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User'
+  ],
+  externalId: 'Scim.user',
+  userName: 'Scim.user@vedant2107bakshigmail.onmicrosoft.com',
+  active: true,
+  displayName: 'Scim User',
+  meta: { resourceType: 'User' },
+  name: { formatted: 'Scim User', familyName: 'User', givenName: 'Scim' },
+  'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User': { department: 'Shobiz' }
+}
+Invalid or missing department: 'undefined'
