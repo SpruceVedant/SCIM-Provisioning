@@ -68,3 +68,27 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
       res.status(500).send({ status: 'failure', error: error.response?.data || error.message });
     }
   });
+
+
+{
+    "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+    ],
+    "externalId": "Scim.user",
+    "userName": "Scim.user@vedant2107bakshigmail.onmicrosoft.com",
+    "active": true,
+    "displayName": "Scim User",
+    "meta": {
+        "resourceType": "User"
+    },
+    "name": {
+        "formatted": "Scim User",
+        "familyName": "User",
+        "givenName": "Scim"
+    },
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+        "department": "Shobiz",
+        "division": "Employee Center"
+    }
+}
