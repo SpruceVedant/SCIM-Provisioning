@@ -10,25 +10,23 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     const email = user.userName || 'default@example.com';
   
     // Extract and normalize department
-    const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim().toLowerCase();
+    const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim();
     const subsidiaryId = departmentSubsidiaryMap[department];
-  
     if (!subsidiaryId) {
       console.error(`Invalid or missing department: '${department}'`);
       return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
     }
   
-    // Extract and normalize employee type
-    const rawEmployeeType = user.employeeType || null; // Root-level field
+    // Extract employee type (or use fallback logic)
+    const rawEmployeeType = user.employeeType || user.jobTitle || null; // Try employeeType or fallback to jobTitle
     const employeeType = rawEmployeeType?.trim().toLowerCase();
   
-    console.log(`Raw Employee Type: ${rawEmployeeType}`); // Debug log
-    console.log(`Normalized Employee Type: ${employeeType}`); // Debug log
+    console.log(`Raw Employee Type: ${rawEmployeeType}`);
+    console.log(`Normalized Employee Type: ${employeeType}`);
   
     const roles = employeeTypeRoleMap[employeeType];
-  
     if (!roles || roles.length === 0) {
-      console.error(`Invalid or missing employee type: '${employeeType}'`);
+      console.warn(`No roles found for employeeType: '${employeeType}'. Using default role.`);
       return res.status(400).send({ error: `Employee type '${employeeType}' is not mapped to roles.` });
     }
   
