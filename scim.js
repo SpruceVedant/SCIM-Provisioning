@@ -101,7 +101,6 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     selectedrole: roleId.toString(),
   }));
 
-  // Construct the employee payload
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
