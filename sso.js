@@ -1,3 +1,4 @@
+// latest mappings
 const express = require('express');
 const crypto = require('crypto');
 const axios = require('axios');
@@ -11,7 +12,7 @@ const config = {
   CONSUMER_SECRET: '',
   TOKEN_ID: '',
   TOKEN_SECRET: '',
-  DEFAULT_PASSWORD: 'SecurePassword123',
+  DEFAULT_PASSWORD: '',
 };
 
 const departmentSubsidiaryMap = {
@@ -19,6 +20,7 @@ const departmentSubsidiaryMap = {
   "havas india": "2",
   "havas life": "3",
   "shobiz": "6",
+  "think design": "8"
 };
 
 const employeeTypeRoleMap = {
@@ -28,7 +30,7 @@ const employeeTypeRoleMap = {
   "sso role": ["1137"],
 };
 
-// Generate OAuth 1.0 Signature
+// Generateing OAuth 1.0 Signature
 const generateOAuthHeaders = (url, method) => {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = crypto.randomBytes(16).toString('hex');
@@ -68,18 +70,26 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
+app.get(['/Users', '/Users/Users'], (req, res) => {
+  console.log('Incoming GET request to /Users');
+  res.status(200).send({
+    schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+    totalResults: 0,
+    Resources: []
+  });
+});
+
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
 
   console.log('Incoming Azure Provisioning Request:', user);
 
-  // Extract name and email
+
   const firstName = user.name?.givenName || 'FirstName';
   const lastName = user.name?.familyName || 'LastName';
   const email = user.userName || 'default@example.com';
 
-  // Extract and normalize department from nested key
   const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim().toLowerCase();
   const subsidiaryId = departmentSubsidiaryMap[department];
 
@@ -88,9 +98,9 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
   }
 
-  // Extract and normalize division (mapped to employee type)
+
   const rawEmployeeType = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.division?.trim().toLowerCase();
-  const employeeType = rawEmployeeType || "employee center";
+  const employeeType = rawEmployeeType;
   const roles = employeeTypeRoleMap[employeeType];
 
   if (!roles || roles.length === 0) {
@@ -102,7 +112,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     selectedrole: roleId.toString(),
   }));
 
-  // Construct the employee payload
+ 
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
@@ -117,7 +127,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 
   console.log('Mapped Payload to NetSuite:', JSON.stringify(employeePayload, null, 2));
 
-  const netsuiteUrl = `https://${config.ACCOUNT_ID.toLowerCase()}.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
+  const netsuiteUrl = `https://9370186-sb1.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
 
   try {
     const headers = generateOAuthHeaders(netsuiteUrl, 'POST');
