@@ -6,31 +6,27 @@ const app = express();
 app.use(express.json({ type: ['application/json', 'application/scim+json'] }));
 
 const config = {
-ACCOUNT_ID: 'TD2975250',
-CONSUMER_KEY: '',
-CONSUMER_SECRET: '',
-TOKEN_ID: 'edd3b0135f7d89a18e9225cb19b9d5be04137b99c35b7bbccf5823392d7f3f18',
-TOKEN_SECRET: '97a7c0e58e37773e6e374d137808c8f725fcb6864deb3d5204e8ca30c5cd5e5f' ,   
+  ACCOUNT_ID: 'TD2975250',
+  CONSUMER_KEY: '',
+  CONSUMER_SECRET: '',
+  TOKEN_ID: 'edd3b0135f7d89a18e9225cb19b9d5be04137b99c35b7bbccf5823392d7f3f18',
+  TOKEN_SECRET: '97a7c0e58e37773e6e374d137808c8f725fcb6864deb3d5204e8ca30c5cd5e5f',
   DEFAULT_PASSWORD: 'SecurePassword123',
-  AUTH_TOKEN: '', 
+  AUTH_TOKEN: 'sjdgfsdjhfgjsd122123',
 };
 
 const departmentSubsidiaryMap = {
-//   "havas creative network": "1",
   "havas india": "2",
-//   "havas life": "3",
-//   "shobiz": "6",
   "think design": "8",
-  "parent company" : "1"
+  "parent company": "1",
 };
 
 const employeeTypeRoleMap = {
-  "admin": ["3"],
+  admin: ["3"],
   "employee center": ["15"],
-  "ceo": ["8"],
+  ceo: ["8"],
   "sso role": ["1137"],
 };
-
 
 const authenticate = (req, res, next) => {
   const token = req.headers['x-api-key'] || req.headers['authorization']?.split(' ')[1];
@@ -39,9 +35,8 @@ const authenticate = (req, res, next) => {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing token' });
   }
 
-  next(); 
+  next();
 };
-
 
 app.use(authenticate);
 
@@ -90,10 +85,11 @@ app.get(['/Users', '/Users/Users'], (req, res) => {
   res.status(200).send({
     schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
     totalResults: 0,
-    Resources: []
+    Resources: [],
   });
 });
 
+// SCIM POST - Create User
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   const user = req.body;
   console.log('Incoming Azure Provisioning Request:', user);
@@ -103,7 +99,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   const email = user.userName || 'default@example.com';
   const mobile = user.mobile || '12345678';
 
-  const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim().toLowerCase();
+  const department = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.department?.trim().toLowerCase() || 'parent company';
   const subsidiaryId = departmentSubsidiaryMap[department];
 
   if (!subsidiaryId) {
@@ -111,26 +107,23 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     return res.status(400).send({ error: `Department '${department}' is not mapped to a subsidiary.` });
   }
 
-
-  const rawEmployeeType = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.division?.trim().toLowerCase();
-  const employeeType = rawEmployeeType;
-  const roles = employeeTypeRoleMap[employeeType];
+  const rawEmployeeType = user['urn:ietf:params:scim:schemas:extension:enterprise:2.0:User']?.division?.trim().toLowerCase() || 'employee center';
+  const roles = employeeTypeRoleMap[rawEmployeeType];
 
   if (!roles || roles.length === 0) {
-    console.error(`Invalid or missing employee type: '${employeeType}'`);
-    return res.status(400).send({ error: `Employee type '${employeeType}' is not mapped to roles.` });
+    console.error(`Invalid or missing employee type: '${rawEmployeeType}'`);
+    return res.status(400).send({ error: `Employee type '${rawEmployeeType}' is not mapped to roles.` });
   }
 
   const rolesPayload = roles.map((roleId) => ({
     selectedrole: roleId.toString(),
   }));
 
-
   const employeePayload = {
     firstname: firstName,
     lastname: lastName,
-    mobile : mobile,
-    email: email,
+    mobile,
+    email,
     subsidiary: { id: subsidiaryId },
     giveaccess: true,
     password: config.DEFAULT_PASSWORD,
@@ -141,7 +134,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
 
   console.log('Mapped Payload to NetSuite:', JSON.stringify(employeePayload, null, 2));
 
-  const netsuiteUrl = `https://td2975250.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
+  const netsuiteUrl = `https://${config.ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/record/v1/employee`;
 
   try {
     const headers = generateOAuthHeaders(netsuiteUrl, 'POST');
@@ -161,6 +154,7 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   }
 });
 
+// SCIM PATCH - Update User
 app.patch(['/Users/:id', '/Users/Users/:id'], async (req, res) => {
   const userId = req.params.id;
   const user = req.body;
@@ -173,7 +167,7 @@ app.patch(['/Users/:id', '/Users/Users/:id'], async (req, res) => {
     phone: user.phone,
   };
 
-  const netsuiteUrl = `https://td2975250.suitetalk.api.netsuite.com/services/rest/record/v1/employee/${userId}`;
+  const netsuiteUrl = `https://${config.ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/record/v1/employee/${userId}`;
 
   try {
     const headers = generateOAuthHeaders(netsuiteUrl, 'PATCH');
@@ -187,20 +181,21 @@ app.patch(['/Users/:id', '/Users/Users/:id'], async (req, res) => {
   }
 });
 
+// SCIM DELETE - Deactivate User
 app.delete(['/Users/:id', '/Users/Users/:id'], async (req, res) => {
   const userId = req.params.id;
   console.log('Incoming Delete Request for User ID:', userId);
 
-  const netsuiteUrl = `https://td2975250.suitetalk.api.netsuite.com/services/rest/record/v1/employee/${userId}`;
+  const netsuiteUrl = `https://${config.ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/record/v1/employee/${userId}`;
 
   try {
-    const headers = generateOAuthHeaders(netsuiteUrl, 'DELETE');
-    await axios.delete(netsuiteUrl, { headers });
+    const headers = generateOAuthHeaders(netsuiteUrl, 'PATCH');
+    await axios.patch(netsuiteUrl, { isinactive: true }, { headers });
 
-    console.log('User deleted successfully:', userId);
+    console.log(`User with ID ${userId} marked as inactive in NetSuite.`);
     res.status(204).send();
   } catch (error) {
-    console.error('Error deleting user in NetSuite:', error.response?.data || error.message);
+    console.error('Error deactivating user in NetSuite:', error.response?.data || error.message);
     res.status(500).send({ status: 'failure', error: error.response?.data || error.message });
   }
 });
