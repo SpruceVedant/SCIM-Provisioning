@@ -6,13 +6,7 @@ const app = express();
 app.use(express.json({ type: ['application/json', 'application/scim+json'] }));
 
 const config = {
-  ACCOUNT_ID: 'TD2975250',
-  CONSUMER_KEY: 'af26d5784af9fb3b8219a01aa6a92fe7106ae1a09df98b033e6b05602191cb51',
-  CONSUMER_SECRET: '1d08788bcf1e140c5ad3bcb5f6020d044f5eaf63c7b74b3481694408ae6c9dcd',
-  TOKEN_ID: 'edd3b0135f7d89a18e9225cb19b9d5be04137b99c35b7bbccf5823392d7f3f18',
-  TOKEN_SECRET: '97a7c0e58e37773e6e374d137808c8f725fcb6864deb3d5204e8ca30c5cd5e5f',
-  DEFAULT_PASSWORD: 'SecurePassword123',
-  AUTH_TOKEN: 'd4f5c6e7a8b9c0d1e2f3a4b5c6d7e8f9d0e1f2a3b4c5d6e7f8g9h0i1j2k3l4m5',
+ 
 };
 
 const departmentSubsidiaryMap = {
