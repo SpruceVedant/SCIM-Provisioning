@@ -1,22 +1,27 @@
-const express = require('express');
-const crypto = require('crypto');
-const axios = require('axios');
 
 const app = express();
 app.use(express.json({ type: ['application/json', 'application/scim+json'] }));
 
 const config = {
-  ACCOUNT_ID: 'td2953323',
+  ACCOUNT_ID: '9370186_SB1',
   CONSUMER_KEY: '',
   CONSUMER_SECRET: '',
-  TOKEN_ID: '',
+  TOKEN_ID: '=',
   TOKEN_SECRET: '',
   DEFAULT_SUBSIDIARY_ID: '1', 
-  DEFAULT_LOCATION_ID: '2',
-  DEFAULT_DEPARTMENT_ID: '3', 
+  DEFAULT_PASSWORD: 'SecurePassword123', 
 };
 
 
+const departmentRoleMap = {
+  "Employee Center": ["15"], 
+  "Admin": ["3"],
+  "Finance": ["8", "9"],
+  "IT": ["5", "6"], 
+  
+};
+
+// Generate OAuth 1.0 Signature
 const generateOAuthHeaders = (url, method) => {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const nonce = crypto.randomBytes(16).toString('hex');
@@ -56,15 +61,6 @@ const generateOAuthHeaders = (url, method) => {
   };
 };
 
-app.get(['/Users', '/Users/Users'], (req, res) => {
-  console.log('Incoming GET request to /Users');
-  res.status(200).send({
-    schemas: ['urn:ietf:params:scim:api:messages:2.0:ListResponse'],
-    totalResults: 0,
-    Resources: [],
-  });
-});
-
 app.post(['/Users', '/Users/Users'], async (req, res) => {
   console.log('Raw Request Body:', JSON.stringify(req.body, null, 2));
   const user = req.body;
@@ -77,11 +73,17 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
   const lastName = displayNameParts.slice(1).join(' ') || 'LastName';
 
   
-  const location = user.location || config.DEFAULT_LOCATION_ID; 
-  const department = user.department || config.DEFAULT_DEPARTMENT_ID; 
-  const phone = user.phoneNumbers?.[0]?.value || null;
-  const title = user.title || null; 
-  const hireDate = user.hireDate || null;
+  const department = user.department || "Employee Center"; 
+  const roles = departmentRoleMap[department] || []; 
+
+  if (roles.length === 0) {
+    console.warn(`No roles found for department: ${department}`);
+  }
+
+  
+  const rolesPayload = roles.map((roleId) => ({
+    selectedrole: roleId,
+  }));
 
   
   const employeePayload = {
@@ -89,15 +91,12 @@ app.post(['/Users', '/Users/Users'], async (req, res) => {
     lastname: lastName,
     email: user.userName || 'default@example.com',
     subsidiary: { id: config.DEFAULT_SUBSIDIARY_ID },
-    location: { id: location },
-    department: { id: department },
-    phone,
-    title,
-    hiredate: hireDate,
+    department,
     giveaccess: true,
-    password: 'SecurePassword123',
-    password2: 'SecurePassword123',
+    password: config.DEFAULT_PASSWORD,
+    password2: config.DEFAULT_PASSWORD,
     isinactive: false,
+    roles: { items: rolesPayload },
   };
 
   console.log('Mapped Payload to NetSuite:', employeePayload);
